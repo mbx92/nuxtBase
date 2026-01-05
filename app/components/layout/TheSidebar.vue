@@ -11,11 +11,18 @@ const emit = defineEmits<{
   toggle: []
 }>()
 
-const appConfig = useAppConfig() as any
+const appConfig = useAppConfig()
 const route = useRoute()
 
+interface NavItem {
+  label: string
+  icon?: string
+  to?: string
+  children?: NavItem[]
+}
+
 // Default navigation if app.config doesn't provide it
-const defaultNavigation = [
+const defaultNavigation: NavItem[] = [
   {
     label: 'Dashboard',
     icon: 'i-heroicons-home',
