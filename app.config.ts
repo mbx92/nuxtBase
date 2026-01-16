@@ -29,6 +29,14 @@ export default defineAppConfig({
         to: '/'
       },
       {
+        label: 'Work Management',
+        icon: 'i-heroicons-briefcase',
+        children: [
+          { label: 'Projects', to: '/projects', icon: 'i-heroicons-folder' },
+          { label: 'Developers', to: '/developers', icon: 'i-heroicons-users' }
+        ]
+      },
+      {
         label: 'Components',
         icon: 'i-heroicons-cube',
         to: '/components',

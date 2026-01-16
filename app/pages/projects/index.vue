@@ -1,0 +1,333 @@
+<script setup lang="ts">
+definePageMeta({
+  layout: 'default',
+})
+
+const toast = useToast()
+
+// State
+const projects = ref<any[]>([])
+const loading = ref(true)
+const showModal = ref(false)
+const isEditing = ref(false)
+const selectedProject = ref<any>(null)
+
+const form = ref({
+  name: '',
+  description: '',
+  totalBudget: 15000000,
+  safetyNetPercent: 10,
+  managementFeePercent: 10,
+  deploymentFee: 1000000,
+  daysDuration: 12,
+  status: 'active',
+})
+
+// Fetch projects
+async function fetchProjects() {
+  loading.value = true
+  try {
+    projects.value = await $fetch('/api/projects')
+  } catch (error: any) {
+    toast.add({
+      title: 'Error',
+      description: error.message || 'Failed to fetch projects',
+      color: 'error',
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+// Create project
+async function createProject() {
+  try {
+    const newProject = await $fetch('/api/projects', {
+      method: 'POST',
+      body: form.value,
+    })
+    projects.value.unshift(newProject)
+    closeModal()
+    toast.add({
+      title: 'Success',
+      description: 'Project created successfully',
+      color: 'success',
+    })
+  } catch (error: any) {
+    toast.add({
+      title: 'Error',
+      description: error.message || 'Failed to create project',
+      color: 'error',
+    })
+  }
+}
+
+// Update project
+async function updateProject() {
+  if (!selectedProject.value) return
+  try {
+    const updatedProject = await $fetch(`/api/projects/${selectedProject.value.id}`, {
+      method: 'PUT',
+      body: form.value,
+    })
+    const index = projects.value.findIndex(p => p.id === selectedProject.value.id)
+    if (index !== -1) {
+      projects.value[index] = updatedProject
+    }
+    closeModal()
+    toast.add({
+      title: 'Success',
+      description: 'Project updated successfully',
+      color: 'success',
+    })
+  } catch (error: any) {
+    toast.add({
+      title: 'Error',
+      description: error.message || 'Failed to update project',
+      color: 'error',
+    })
+  }
+}
+
+// Delete project
+async function deleteProject(project: any) {
+  if (!confirm(`Delete project "${project.name}"?`)) return
+  try {
+    await $fetch(`/api/projects/${project.id}`, { method: 'DELETE' })
+    projects.value = projects.value.filter(p => p.id !== project.id)
+    toast.add({
+      title: 'Success',
+      description: 'Project deleted successfully',
+      color: 'success',
+    })
+  } catch (error: any) {
+    toast.add({
+      title: 'Error',
+      description: error.message || 'Failed to delete project',
+      color: 'error',
+    })
+  }
+}
+
+// Modal handlers
+function openCreateModal() {
+  isEditing.value = false
+  selectedProject.value = null
+  form.value = {
+    name: '',
+    description: '',
+    totalBudget: 15000000,
+    safetyNetPercent: 10,
+    managementFeePercent: 10,
+    deploymentFee: 1000000,
+    daysDuration: 12,
+    status: 'active',
+  }
+  showModal.value = true
+}
+
+function openEditModal(project: any) {
+  isEditing.value = true
+  selectedProject.value = project
+  form.value = {
+    name: project.name,
+    description: project.description || '',
+    totalBudget: project.totalBudget,
+    safetyNetPercent: project.safetyNetPercent,
+    managementFeePercent: project.managementFeePercent,
+    deploymentFee: project.deploymentFee,
+    daysDuration: project.daysDuration,
+    status: project.status,
+  }
+  showModal.value = true
+}
+
+function closeModal() {
+  showModal.value = false
+}
+
+function handleSubmit() {
+  if (isEditing.value) {
+    updateProject()
+  } else {
+    createProject()
+  }
+}
+
+// Format currency
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(value)
+}
+
+// Status options
+const statusOptions = [
+  { label: 'Active', value: 'active' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Cancelled', value: 'cancelled' },
+]
+
+onMounted(() => {
+  fetchProjects()
+})
+</script>
+
+<template>
+  <div class="p-6">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold">Projects</h1>
+        <p class="text-gray-500 dark:text-gray-400">Manage your project budgets and configurations</p>
+      </div>
+      <UButton icon="i-heroicons-plus" @click="openCreateModal">
+        New Project
+      </UButton>
+    </div>
+
+    <!-- Projects Grid -->
+    <div v-if="loading" class="flex items-center justify-center h-64">
+      <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-primary" />
+    </div>
+
+    <div v-else-if="projects.length === 0" class="text-center py-12">
+      <UIcon name="i-heroicons-folder-open" class="w-12 h-12 mx-auto text-gray-400" />
+      <h3 class="mt-2 text-lg font-medium">No projects yet</h3>
+      <p class="mt-1 text-gray-500">Get started by creating a new project.</p>
+      <UButton class="mt-4" @click="openCreateModal">
+        Create Project
+      </UButton>
+    </div>
+
+    <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <UCard v-for="project in projects" :key="project.id" class="hover:shadow-lg transition-shadow">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold truncate">{{ project.name }}</h3>
+            <UBadge :color="project.status === 'active' ? 'success' : project.status === 'completed' ? 'info' : 'neutral'">
+              {{ project.status }}
+            </UBadge>
+          </div>
+        </template>
+
+        <div class="space-y-3">
+          <p v-if="project.description" class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+            {{ project.description }}
+          </p>
+          
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-500">Total Budget</span>
+              <span class="font-medium">{{ formatCurrency(project.totalBudget) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Duration</span>
+              <span>{{ project.daysDuration }} days</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Safety Net</span>
+              <span>{{ project.safetyNetPercent }}%</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Management Fee</span>
+              <span>{{ project.managementFeePercent }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <template #footer>
+          <div class="flex gap-2">
+            <UButton
+              size="sm"
+              color="primary"
+              variant="ghost"
+              :to="`/projects/${project.id}`"
+            >
+              View Details
+            </UButton>
+            <UButton
+              size="sm"
+              color="neutral"
+              variant="ghost"
+              icon="i-heroicons-pencil"
+              @click="openEditModal(project)"
+            />
+            <UButton
+              size="sm"
+              color="error"
+              variant="ghost"
+              icon="i-heroicons-trash"
+              @click="deleteProject(project)"
+            />
+          </div>
+        </template>
+      </UCard>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <UModal v-model:open="showModal">
+      <template #content>
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold">{{ isEditing ? 'Edit Project' : 'Create Project' }}</h3>
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="i-heroicons-x-mark"
+                size="sm"
+                @click="closeModal"
+              />
+            </div>
+          </template>
+
+          <form class="space-y-4" @submit.prevent="handleSubmit">
+            <UFormField label="Project Name" required>
+              <UInput v-model="form.name" placeholder="e.g., Kos-Man Backend" />
+            </UFormField>
+
+            <UFormField label="Description">
+              <UTextarea v-model="form.description" placeholder="Project description..." rows="2" />
+            </UFormField>
+
+            <div class="grid grid-cols-2 gap-4">
+              <UFormField label="Total Budget (Rp)" required>
+                <UInput v-model.number="form.totalBudget" type="number" />
+              </UFormField>
+              <UFormField label="Duration (Days)">
+                <UInput v-model.number="form.daysDuration" type="number" />
+              </UFormField>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4">
+              <UFormField label="Safety Net %">
+                <UInput v-model.number="form.safetyNetPercent" type="number" min="0" max="100" />
+              </UFormField>
+              <UFormField label="Management Fee %">
+                <UInput v-model.number="form.managementFeePercent" type="number" min="0" max="100" />
+              </UFormField>
+              <UFormField label="Deployment Fee">
+                <UInput v-model.number="form.deploymentFee" type="number" />
+              </UFormField>
+            </div>
+
+            <UFormField label="Status">
+              <USelect v-model="form.status" :items="statusOptions" />
+            </UFormField>
+
+            <div class="flex justify-end gap-2 pt-4">
+              <UButton color="neutral" variant="outline" @click="closeModal">
+                Cancel
+              </UButton>
+              <UButton type="submit">
+                {{ isEditing ? 'Update' : 'Create' }}
+              </UButton>
+            </div>
+          </form>
+        </UCard>
+      </template>
+    </UModal>
+  </div>
+</template>
