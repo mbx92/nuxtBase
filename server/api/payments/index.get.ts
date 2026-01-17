@@ -1,5 +1,5 @@
-import { db } from '~/server/db'
-import { payments } from '~/server/db/schema'
+import { db } from '../../db'
+import { payments } from '../../db/schema'
 import { eq, desc } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {

@@ -1,5 +1,5 @@
-import { db } from '~/server/db'
-import { phases } from '~/server/db/schema'
+import { db } from '../../db'
+import { phases } from '../../db/schema'
 
 export default defineEventHandler(async (event) => {
   try {

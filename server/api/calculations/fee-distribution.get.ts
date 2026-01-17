@@ -1,5 +1,5 @@
-import { db } from '~/server/db'
-import { projects, tasks, developers, phases } from '~/server/db/schema'
+import { db } from '../../db'
+import { projects, tasks, developers, phases } from '../../db/schema'
 import { eq, sum } from 'drizzle-orm'
 
 interface DeveloperFee {

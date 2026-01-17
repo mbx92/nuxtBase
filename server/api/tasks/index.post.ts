@@ -1,5 +1,5 @@
-import { db } from '~/server/db'
-import { tasks, calculateWorkWeight } from '~/server/db/schema'
+import { db } from '../../db'
+import { tasks, calculateWorkWeight } from '../../db/schema'
 
 export default defineEventHandler(async (event) => {
   try {
