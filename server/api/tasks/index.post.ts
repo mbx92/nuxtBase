@@ -5,6 +5,13 @@ export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
     
+    console.log('📝 Creating task with dates:', {
+      startDate: body.startDate,
+      endDate: body.endDate,
+      startDateType: typeof body.startDate,
+      endDateType: typeof body.endDate
+    })
+    
     // Calculate work weight based on 5 dimensions
     const k = body.complexity || 1  // Kompleksitas
     const w = body.time || 1        // Waktu
@@ -17,6 +24,7 @@ export default defineEventHandler(async (event) => {
     const [newTask] = await db.insert(tasks).values({
       phaseId: body.phaseId,
       developerId: body.developerId || null,
+      category: body.category || 'backend',
       name: body.name,
       description: body.description,
       estimatedHours: body.estimatedHours,
@@ -28,6 +36,8 @@ export default defineEventHandler(async (event) => {
       calculatedWeight: weight,
       status: body.status || 'pending',
       priority: body.priority || 'medium',
+      startDate: body.startDate ? new Date(body.startDate) : null,
+      endDate: body.endDate ? new Date(body.endDate) : null,
     }).returning()
     
     return newTask

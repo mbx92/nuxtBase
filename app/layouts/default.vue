@@ -78,13 +78,16 @@ provide('toggleSidebar', toggleSidebar)
       </main>
 
       <!-- Footer -->
-      <footer class="border-t border-gray-200 dark:border-gray-800 px-6 py-4">
+      <footer class="border-t border-gray-200 dark:border-gray-800 px-6 py-4 bg-white dark:bg-gray-900">
         <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
           <p>© 2025 {{ appConfig?.app?.name || 'NuxtBase' }}. All rights reserved.</p>
           <p>v{{ appConfig?.app?.version || '1.0.0' }}</p>
         </div>
       </footer>
     </div>
+
+    <!-- Global Confirm Dialog -->
+    <ConfirmDialog />
   </div>
 </template>
 

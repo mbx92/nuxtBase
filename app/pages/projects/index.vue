@@ -16,10 +16,14 @@ const form = ref({
   name: '',
   description: '',
   totalBudget: 15000000,
+  dpPercent: 50,
+  completionPercent: 40,
+  bufferPercent: 10,
   safetyNetPercent: 10,
   managementFeePercent: 10,
   deploymentFee: 1000000,
   daysDuration: 12,
+  estimatedTotalWeight: 327.5,
   status: 'active',
 })
 
@@ -90,8 +94,21 @@ async function updateProject() {
 }
 
 // Delete project
+const { confirm } = useConfirmDialog()
+
 async function deleteProject(project: any) {
-  if (!confirm(`Delete project "${project.name}"?`)) return
+  const projectName = project.name || 'this project'
+  const confirmed = await confirm({
+    title: 'Delete Project',
+    message: `Are you sure you want to delete "${projectName}"? This action cannot be undone.`,
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    color: 'error',
+    icon: 'i-heroicons-trash',
+  })
+  
+  if (!confirmed) return
+  
   try {
     await $fetch(`/api/projects/${project.id}`, { method: 'DELETE' })
     projects.value = projects.value.filter(p => p.id !== project.id)
@@ -117,10 +134,14 @@ function openCreateModal() {
     name: '',
     description: '',
     totalBudget: 15000000,
+    dpPercent: 50,
+    completionPercent: 40,
+    bufferPercent: 10,
     safetyNetPercent: 10,
     managementFeePercent: 10,
     deploymentFee: 1000000,
     daysDuration: 12,
+    estimatedTotalWeight: 327.5,
     status: 'active',
   }
   showModal.value = true
@@ -133,10 +154,14 @@ function openEditModal(project: any) {
     name: project.name,
     description: project.description || '',
     totalBudget: project.totalBudget,
+    dpPercent: project.dpPercent || 50,
+    completionPercent: project.completionPercent || 40,
+    bufferPercent: project.bufferPercent || 10,
     safetyNetPercent: project.safetyNetPercent,
     managementFeePercent: project.managementFeePercent,
     deploymentFee: project.deploymentFee,
     daysDuration: project.daysDuration,
+    estimatedTotalWeight: project.estimatedTotalWeight || 327.5,
     status: project.status,
   }
   showModal.value = true
@@ -223,16 +248,16 @@ onMounted(() => {
               <span class="font-medium">{{ formatCurrency(project.totalBudget) }}</span>
             </div>
             <div class="flex justify-between">
+              <span class="text-gray-500">Down Payment</span>
+              <span class="text-green-600 font-medium">{{ project.dpPercent || 50 }}%</span>
+            </div>
+            <div class="flex justify-between">
               <span class="text-gray-500">Duration</span>
               <span>{{ project.daysDuration }} days</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">Safety Net</span>
-              <span>{{ project.safetyNetPercent }}%</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-500">Management Fee</span>
-              <span>{{ project.managementFeePercent }}%</span>
+              <span class="text-gray-500">Estimated Weight</span>
+              <span>{{ project.estimatedTotalWeight || 327.5 }} pts</span>
             </div>
           </div>
         </div>
@@ -285,40 +310,69 @@ onMounted(() => {
 
           <form class="space-y-4" @submit.prevent="handleSubmit">
             <UFormField label="Project Name" required>
-              <UInput v-model="form.name" placeholder="e.g., Kos-Man Backend" />
+              <UInput v-model="form.name" placeholder="e.g., Kos-Man Backend" class="w-full" />
             </UFormField>
 
             <UFormField label="Description">
-              <UTextarea v-model="form.description" placeholder="Project description..." rows="2" />
+              <UTextarea v-model="form.description" placeholder="Project description..." :rows="2" class="w-full" />
             </UFormField>
 
             <div class="grid grid-cols-2 gap-4">
               <UFormField label="Total Budget (Rp)" required>
-                <UInput v-model.number="form.totalBudget" type="number" />
+                <UInput v-model.number="form.totalBudget" type="number" class="w-full" />
               </UFormField>
               <UFormField label="Duration (Days)">
-                <UInput v-model.number="form.daysDuration" type="number" />
+                <UInput v-model.number="form.daysDuration" type="number" class="w-full" />
               </UFormField>
+            </div>
+
+            <UFormField label="Estimated Total Work Weight (pts)">
+              <UInput v-model.number="form.estimatedTotalWeight" type="number" step="0.5" min="100" class="w-full" />
+              <template #hint>
+                <span class="text-xs text-gray-400">Total work weight estimate for all tasks (default: 327.5 pts based on methodology)</span>
+              </template>
+            </UFormField>
+
+            <div class="border-t pt-4 mt-4">
+              <h4 class="font-medium mb-3">Payment Structure</h4>
+              
+              <div class="grid grid-cols-2 gap-4">
+                <UFormField label="Down Payment (DP) %">
+                  <UInput v-model.number="form.dpPercent" type="number" min="0" max="100" class="w-full" />
+                </UFormField>
+                <UFormField label="Completion Payment %">
+                  <UInput v-model.number="form.completionPercent" type="number" min="0" max="100" class="w-full" />
+                </UFormField>
+              </div>
+
+              <div class="mt-2">
+                <UFormField label="Buffer/Retention %">
+                  <UInput v-model.number="form.bufferPercent" type="number" min="0" max="100" class="w-full" />
+                  <template #hint>
+                    <span class="text-xs text-gray-400">Payment held until warranty period ends</span>
+                  </template>
+                </UFormField>
+              </div>
             </div>
 
             <div class="grid grid-cols-3 gap-4">
               <UFormField label="Safety Net %">
-                <UInput v-model.number="form.safetyNetPercent" type="number" min="0" max="100" />
+                <UInput v-model.number="form.safetyNetPercent" type="number" min="0" max="100" class="w-full" />
               </UFormField>
               <UFormField label="Management Fee %">
-                <UInput v-model.number="form.managementFeePercent" type="number" min="0" max="100" />
+                <UInput v-model.number="form.managementFeePercent" type="number" min="0" max="100" class="w-full" />
               </UFormField>
               <UFormField label="Deployment Fee">
-                <UInput v-model.number="form.deploymentFee" type="number" />
+                <UInput v-model.number="form.deploymentFee" type="number" class="w-full" />
               </UFormField>
             </div>
 
             <UFormField label="Status">
-              <USelect v-model="form.status" :items="statusOptions" />
+              <USelect v-model="form.status" :items="statusOptions" value-attribute="value" option-attribute="label" class="w-full" />
             </UFormField>
 
-            <div class="flex justify-end gap-2 pt-4">
-              <UButton color="neutral" variant="outline" @click="closeModal">
+            <div class="flex justify-end gap-2">
+              <UButton variant="outline" type="button" @click="closeModal">
                 Cancel
               </UButton>
               <UButton type="submit">

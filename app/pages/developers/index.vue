@@ -65,8 +65,20 @@ async function updateDeveloper() {
 }
 
 // Delete developer
+const { confirm } = useConfirmDialog()
+
 async function deleteDeveloper(dev: any) {
-  if (!confirm(`Delete developer "${dev.name}"?`)) return
+  const confirmed = await confirm({
+    title: 'Delete Developer',
+    message: `Are you sure you want to delete "${dev.name}"? This action cannot be undone.`,
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    color: 'error',
+    icon: 'i-heroicons-trash',
+  })
+  
+  if (!confirmed) return
+  
   try {
     await $fetch(`/api/developers/${dev.id}`, { method: 'DELETE' })
     developers.value = developers.value.filter(d => d.id !== dev.id)
@@ -171,16 +183,16 @@ onMounted(fetchDevelopers)
           </template>
           <form class="space-y-4" @submit.prevent="handleSubmit">
             <UFormField label="Name" required>
-              <UInput v-model="form.name" placeholder="Developer name" />
+              <UInput v-model="form.name" placeholder="Developer name" class="w-full" />
             </UFormField>
             <UFormField label="Email">
-              <UInput v-model="form.email" type="email" placeholder="email@example.com" />
+              <UInput v-model="form.email" type="email" placeholder="email@example.com" class="w-full" />
             </UFormField>
             <UFormField label="Role">
-              <UInput v-model="form.role" placeholder="e.g., Auth Lead, Core APIs" />
+              <UInput v-model="form.role" placeholder="e.g., Auth Lead, Core APIs" class="w-full" />
             </UFormField>
             <UFormField label="Skills Focus">
-              <UInput v-model="form.skillFocus" placeholder="e.g., Prisma, JWT, Security" />
+              <UInput v-model="form.skillFocus" placeholder="e.g., Prisma, JWT, Security" class="w-full" />
             </UFormField>
             <UFormField>
               <label class="flex items-center gap-2">

@@ -11,15 +11,22 @@ export default defineEventHandler(async (event) => {
     
     const body = await readBody(event)
     
+    const updateData: any = {
+      name: body.name,
+      email: body.email,
+      role: body.role,
+      skillFocus: body.skillFocus,
+      isActive: body.isActive,
+      updatedAt: new Date(),
+    }
+    
+    // Only update password if provided
+    if (body.password) {
+      updateData.password = body.password // In production, hash this!
+    }
+    
     const [updatedDeveloper] = await db.update(developers)
-      .set({
-        name: body.name,
-        email: body.email,
-        role: body.role,
-        skillFocus: body.skillFocus,
-        isActive: body.isActive,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(developers.id, id))
       .returning()
     
@@ -27,7 +34,10 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, message: 'Developer not found' })
     }
     
-    return updatedDeveloper
+    // Don't return password in response
+    const { password, ...developerData } = updatedDeveloper
+    
+    return developerData
   } catch (error: any) {
     if (error.statusCode) throw error
     throw createError({

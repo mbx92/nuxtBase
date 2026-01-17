@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
       })
         .from(tasks)
         .leftJoin(developers, eq(tasks.developerId, developers.id))
-        .innerJoin(phases, eq(tasks.phaseId, phases.id))
+        .leftJoin(phases, eq(tasks.phaseId, phases.id))
         .where(eq(phases.projectId, projectId))
         .orderBy(desc(tasks.createdAt))
     } else {

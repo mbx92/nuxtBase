@@ -11,6 +11,14 @@ export default defineEventHandler(async (event) => {
     
     const body = await readBody(event)
     
+    console.log('✏️ Updating task with dates:', {
+      taskId: id,
+      startDate: body.startDate,
+      endDate: body.endDate,
+      startDateType: typeof body.startDate,
+      endDateType: typeof body.endDate
+    })
+    
     // Recalculate work weight if scoring changed
     const k = body.complexity || 1
     const w = body.time || 1
@@ -23,6 +31,7 @@ export default defineEventHandler(async (event) => {
     const [updatedTask] = await db.update(tasks)
       .set({
         developerId: body.developerId,
+        category: body.category,
         name: body.name,
         description: body.description,
         estimatedHours: body.estimatedHours,
@@ -34,6 +43,8 @@ export default defineEventHandler(async (event) => {
         calculatedWeight: weight,
         status: body.status,
         priority: body.priority,
+        startDate: body.startDate ? new Date(body.startDate) : null,
+        endDate: body.endDate ? new Date(body.endDate) : null,
         updatedAt: new Date(),
       })
       .where(eq(tasks.id, id))

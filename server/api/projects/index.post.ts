@@ -9,10 +9,14 @@ export default defineEventHandler(async (event) => {
       name: body.name,
       description: body.description,
       totalBudget: body.totalBudget || 0,
+      dpPercent: body.dpPercent || 50,
+      completionPercent: body.completionPercent || 40,
+      bufferPercent: body.bufferPercent || 10,
       safetyNetPercent: body.safetyNetPercent || 10,
       managementFeePercent: body.managementFeePercent || 10,
       deploymentFee: body.deploymentFee || 0,
       daysDuration: body.daysDuration || 12,
+      estimatedTotalWeight: body.estimatedTotalWeight || 327.5,
       status: body.status || 'active',
     }).returning()
     

@@ -8,9 +8,9 @@ interface DeveloperFee {
   totalWeight: number
   percentage: number
   baseFee: number
-  dpAmount: number        // 50%
-  completionAmount: number // 40%
-  bufferAmount: number    // 10% or based on safetyNet
+  dpAmount: number
+  completionAmount: number
+  bufferAmount: number
 }
 
 interface FeeDistribution {
@@ -18,9 +18,13 @@ interface FeeDistribution {
     id: string
     name: string
     totalBudget: number
+    dpPercent: number
+    completionPercent: number
+    bufferPercent: number
     safetyNetPercent: number
     managementFeePercent: number
     deploymentFee: number
+    estimatedTotalWeight: number
   }
   breakdown: {
     totalBudget: number
@@ -28,9 +32,11 @@ interface FeeDistribution {
     managementFeeAmount: number
     deploymentFeeAmount: number
     teamFeePool: number
+    feePerPoint: number
   }
   developers: DeveloperFee[]
   totalWeight: number
+  estimatedTotalWeight: number
 }
 
 export default defineEventHandler(async (event): Promise<FeeDistribution> => {
@@ -86,9 +92,19 @@ export default defineEventHandler(async (event): Promise<FeeDistribution> => {
     // Calculate fee distribution per developer
     const developerFees: DeveloperFee[] = []
     
+    // Use estimated total weight from project for consistent fee per point
+    const estimatedTotalWeight = project.estimatedTotalWeight || 327.5
+    const feePerPoint = teamFeePool / estimatedTotalWeight
+    
     for (const [devId, data] of developerWeights) {
-      const percentage = totalWeight > 0 ? (data.weight / totalWeight) * 100 : 0
-      const baseFee = teamFeePool * (percentage / 100)
+      // Calculate fee based on weight × fee per point (linear)
+      const baseFee = data.weight * feePerPoint
+      const percentage = estimatedTotalWeight > 0 ? (data.weight / estimatedTotalWeight) * 100 : 0
+      
+      // Use project-specific payment structure
+      const dpPercent = project.dpPercent || 50
+      const completionPercent = project.completionPercent || 40
+      const bufferPercent = project.bufferPercent || 10
       
       developerFees.push({
         developerId: devId,
@@ -96,9 +112,9 @@ export default defineEventHandler(async (event): Promise<FeeDistribution> => {
         totalWeight: data.weight,
         percentage: Math.round(percentage * 10) / 10,
         baseFee: Math.round(baseFee),
-        dpAmount: Math.round(baseFee * 0.5),
-        completionAmount: Math.round(baseFee * 0.4),
-        bufferAmount: Math.round(baseFee * 0.1),
+        dpAmount: Math.round(baseFee * (dpPercent / 100)),
+        completionAmount: Math.round(baseFee * (completionPercent / 100)),
+        bufferAmount: Math.round(baseFee * (bufferPercent / 100)),
       })
     }
     
@@ -110,9 +126,13 @@ export default defineEventHandler(async (event): Promise<FeeDistribution> => {
         id: project.id,
         name: project.name,
         totalBudget: project.totalBudget,
+        dpPercent: project.dpPercent || 50,
+        completionPercent: project.completionPercent || 40,
+        bufferPercent: project.bufferPercent || 10,
         safetyNetPercent: project.safetyNetPercent,
         managementFeePercent: project.managementFeePercent,
         deploymentFee: project.deploymentFee,
+        estimatedTotalWeight: project.estimatedTotalWeight || 327.5,
       },
       breakdown: {
         totalBudget,
@@ -120,9 +140,11 @@ export default defineEventHandler(async (event): Promise<FeeDistribution> => {
         managementFeeAmount: Math.round(managementFeeAmount),
         deploymentFeeAmount: Math.round(deploymentFeeAmount),
         teamFeePool: Math.round(teamFeePool),
+        feePerPoint: Math.round(feePerPoint * 100) / 100,
       },
       developers: developerFees,
       totalWeight,
+      estimatedTotalWeight: project.estimatedTotalWeight || 327.5,
     }
   } catch (error: any) {
     if (error.statusCode) throw error

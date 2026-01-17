@@ -7,10 +7,14 @@ export const projects = pgTable('projects', {
   name: text('name').notNull(),
   description: text('description'),
   totalBudget: real('total_budget').notNull().default(0),
+  dpPercent: real('dp_percent').notNull().default(50), // Down Payment percentage
+  completionPercent: real('completion_percent').notNull().default(40), // Completion payment percentage
+  bufferPercent: real('buffer_percent').notNull().default(10), // Buffer/retention percentage
   safetyNetPercent: real('safety_net_percent').notNull().default(10),
   managementFeePercent: real('management_fee_percent').notNull().default(10),
   deploymentFee: real('deployment_fee').notNull().default(0),
   daysDuration: integer('days_duration').notNull().default(12),
+  estimatedTotalWeight: real('estimated_total_weight').notNull().default(327.5), // Total work weight estimate
   status: text('status').notNull().default('active'), // active, completed, cancelled
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -20,7 +24,8 @@ export const projects = pgTable('projects', {
 export const developers = pgTable('developers', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
-  email: text('email'),
+  email: text('email').notNull().unique(),
+  password: text('password').notNull(), // Hashed password
   role: text('role'), // e.g., "Auth Lead", "Core APIs", "Billing + Frontend"
   skillFocus: text('skill_focus'), // e.g., "Prisma, JWT, Security"
   isActive: boolean('is_active').notNull().default(true),
@@ -46,6 +51,7 @@ export const tasks = pgTable('tasks', {
   id: uuid('id').primaryKey().defaultRandom(),
   phaseId: uuid('phase_id').notNull().references(() => phases.id, { onDelete: 'cascade' }),
   developerId: uuid('developer_id').references(() => developers.id, { onDelete: 'set null' }),
+  category: text('category').notNull().default('backend'), // backend, frontend, devops
   name: text('name').notNull(),
   description: text('description'),
   estimatedHours: real('estimated_hours'),
@@ -62,6 +68,8 @@ export const tasks = pgTable('tasks', {
   
   status: text('status').notNull().default('pending'), // pending, in_progress, completed
   priority: text('priority').notNull().default('medium'), // low, medium, high
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })

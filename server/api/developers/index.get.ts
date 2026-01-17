@@ -5,7 +5,9 @@ import { desc } from 'drizzle-orm'
 export default defineEventHandler(async () => {
   try {
     const result = await db.select().from(developers).orderBy(desc(developers.createdAt))
-    return result
+    
+    // Don't return passwords
+    return result.map(({ password, ...dev }) => dev)
   } catch (error: any) {
     throw createError({
       statusCode: 500,
